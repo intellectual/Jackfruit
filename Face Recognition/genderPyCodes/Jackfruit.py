@@ -2,7 +2,7 @@ from pymongo import MongoClient
 import datetime
 import bottle, random
 from pymongo import Connection
-from bottle import route, debug, run
+from bottle import route, debug, run, hook, request, response
 
  
 DATABASE_HOST = 'localhost'
@@ -15,12 +15,26 @@ collection = db.analytics
 
 json = {'timestamp' : 2312370, 'age_band' : 2, 'count' : 56, 'sex' : 'M', 'band1' : 2, 'band2' : 5, 'band3' : 6, 'gender1' : 4, 'gender2' : 6}
 
+@hook('after_request')
+def enable_cors():
+    """
+    You need to add some headers to each request.
+    Don't use the wildcard '*' for Access-Control-Allow-Origin in production.
+    """
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+
 @route('/')
 def index():
     return "Please include timestamp in the URL"
 
-@route('/timestamp/<time>', method='GET')
+@route('/timestamp/<time>', method=['OPTIONS', 'GET'])
 def recipe_show( time=0 ):
+	if request.method == 'OPTIONS':
+		time = int(time)
+		json = find(time)
+		return json
 	time = int(time)
 	json = find(time)
 	return json
